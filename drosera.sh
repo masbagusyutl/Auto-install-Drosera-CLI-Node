@@ -47,10 +47,12 @@ read -p "Masukkan EVM Private Key (0x...): " PRIVATE_KEY
 read -p "Masukkan EVM Public Address (0x...): " PUBLIC_ADDRESS
 
 # Update & install dependencies
+echo "🔄 Update dan install dependencies..."
 sudo apt-get update && sudo apt-get upgrade -y
 sudo apt install curl ufw iptables build-essential git wget lz4 jq make gcc nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev libleveldb-dev tar clang bsdmainutils ncdu unzip libleveldb-dev -y
 
 # Install Docker
+echo "🔄 Menginstall Docker..."
 sudo apt-get update -y && sudo apt-get upgrade -y
 for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
 sudo apt-get update
@@ -63,20 +65,24 @@ sudo apt-get update -y && sudo apt-get install docker-ce docker-ce-cli container
 sudo docker run hello-world
 
 # Install Drosera CLI
+echo "🔄 Menginstall Drosera CLI..."
 curl -L https://app.drosera.io/install | bash
 source ~/.bashrc
 droseraup
 
 # Install Foundry
+echo "🔄 Menginstall Foundry..."
 curl -L https://foundry.paradigm.xyz | bash
 source ~/.bashrc
 foundryup
 
 # Install Bun
+echo "🔄 Menginstall Bun..."
 curl -fsSL https://bun.sh/install | bash
 source ~/.bashrc
 
 # Create trap directory
+echo "🔄 Membuat directory trap..."
 mkdir -p ~/my-drosera-trap && cd ~/my-drosera-trap
 
 # Set git config
@@ -84,45 +90,57 @@ git config --global user.email "$GIT_EMAIL"
 git config --global user.name "$GIT_USERNAME"
 
 # Initialize Trap project
+echo "🔄 Menginisialisasi Trap project..."
 forge init -t drosera-network/trap-foundry-template
 
 # Install bun dependencies & build
+echo "🔄 Menginstall dependencies dan build trap..."
 bun install
 forge build
 
-# Deploy Trap
+# Deploy Trap dengan interaksi manual
+echo "🔄 Melakukan deploy Trap..."
+echo "⚠️ PENTING: Ketika diminta, ketik 'ofc' dan tekan Enter"
+echo "💡 Menjalankan: DROSERA_PRIVATE_KEY=$PRIVATE_KEY drosera apply"
 DROSERA_PRIVATE_KEY=$PRIVATE_KEY drosera apply
-echo "✅ Trap deployed! Jangan lupa untuk melakukan Bloom Boost di dashboard: https://app.drosera.io/"
 
-# Sekarang konfigurasi whitelist untuk operator
+echo -e "\n\n⚠️ PENTING: Setelah trap berhasil di-deploy, jangan lupa untuk melakukan Bloom Boost!"
+echo "🔗 Kunjungi https://app.drosera.io/ dan deposit beberapa Holesky ETH pada trap Anda"
+echo -e "⏳ Tekan ENTER setelah melakukan Bloom Boost untuk melanjutkan..."
+read -p "" continue_after_bloom
+
+# Run dryrun untuk fetch blocks
+echo "🔄 Menjalankan dryrun untuk fetch blocks..."
+drosera dryrun
+
+# Konfigurasi whitelist untuk operator
+echo "🔄 Mengkonfigurasi whitelist operator..."
 echo -e "\n\n# Whitelist configuration\nprivate_trap = true\nwhitelist = [\"$PUBLIC_ADDRESS\"]" >> drosera.toml
 echo "✅ Whitelist operator ditambahkan ke drosera.toml"
 
 # Apply konfigurasi whitelist
+echo "🔄 Menerapkan konfigurasi whitelist..."
 DROSERA_PRIVATE_KEY=$PRIVATE_KEY drosera apply
-echo "✅ Konfigurasi whitelist diterapkan"
 
 # Kembali ke home directory
 cd ~
 
 # Install Operator CLI
+echo "🔄 Menginstall Operator CLI..."
 curl -LO https://github.com/drosera-network/releases/releases/download/v1.16.2/drosera-operator-v1.16.2-x86_64-unknown-linux-gnu.tar.gz
 tar -xvf drosera-operator-v1.16.2-x86_64-unknown-linux-gnu.tar.gz
 sudo cp drosera-operator /usr/bin
 
 # Test Operator CLI
+echo "🔄 Testing Operator CLI..."
 drosera-operator --version
 
 # Register operator
-echo "✅ Mendaftarkan operator..."
+echo "🔄 Mendaftarkan operator..."
 drosera-operator register --eth-rpc-url https://ethereum-holesky-rpc.publicnode.com --eth-private-key $PRIVATE_KEY
 
-# Menjalankan dryrun untuk fetch blocks
-cd ~/my-drosera-trap
-drosera dryrun
-cd ~
-
 # Create systemd service
+echo "🔄 Membuat systemd service..."
 sudo tee /etc/systemd/system/drosera.service > /dev/null <<EOF
 [Unit]
 Description=Drosera node service
@@ -147,6 +165,7 @@ WantedBy=multi-user.target
 EOF
 
 # Buka firewall
+echo "🔄 Membuka port firewall..."
 sudo ufw allow ssh
 sudo ufw allow 22
 sudo ufw enable
@@ -154,14 +173,17 @@ sudo ufw allow 31313/tcp
 sudo ufw allow 31314/tcp
 
 # Jalankan service
+echo "🔄 Menjalankan service drosera..."
 sudo systemctl daemon-reload
 sudo systemctl enable drosera
 sudo systemctl start drosera
 
 # Tampilkan status
+echo "🔄 Status drosera service:"
 sudo systemctl status drosera --no-pager
 
-echo "=== Instalasi selesai! ==="
+echo -e "\n\n=== Instalasi selesai! ==="
 echo "💡 Untuk melihat log node, jalankan: journalctl -u drosera.service -f"
-echo "🔗 Kunjungi dashboard dan lakukan opt-in di https://app.drosera.io/"
-echo "💰 Jangan lupa lakukan Bloom Boost (deposit ETH) di dashboard agar trap berfungsi dengan baik"
+echo "🔗 Kunjungi dashboard Drosera: https://app.drosera.io/"
+echo "⚠️ PENTING: Jangan lupa untuk melakukan Opt-in di dashboard untuk menghubungkan operator dengan Trap!"
+echo "✅ Jika semua langkah telah dilakukan dengan benar, node Anda akan mulai menampilkan blok hijau di dashboard"
