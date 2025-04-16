@@ -64,11 +64,35 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 sudo apt-get update -y && sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
 sudo docker run hello-world
 
-# Install Drosera CLI
+# Install Drosera CLI dengan path yang benar
 echo "🔄 Menginstall Drosera CLI..."
 curl -L https://app.drosera.io/install | bash
 source ~/.bashrc
+export PATH=$PATH:$HOME/.drosera/bin
+if ! command -v drosera &> /dev/null; then
+    echo "⚠️ Drosera CLI tidak terdeteksi di PATH"
+    if [ -f "$HOME/.drosera/bin/drosera" ]; then
+        echo "✅ Ditemukan di $HOME/.drosera/bin/drosera, menambahkan ke PATH"
+        export PATH=$PATH:$HOME/.drosera/bin
+        echo 'export PATH=$PATH:$HOME/.drosera/bin' >> ~/.bashrc
+    else
+        echo "❌ Drosera CLI tidak ditemukan. Mencoba menginstal ulang..."
+        curl -L https://app.drosera.io/install | bash
+        source ~/.bashrc
+        export PATH=$PATH:$HOME/.drosera/bin
+    fi
+fi
 droseraup
+
+# Verifikasi instalasi Drosera
+if ! command -v drosera &> /dev/null; then
+    echo "❌ Instalasi Drosera CLI gagal. Coba manual dengan:"
+    echo "curl -L https://app.drosera.io/install | bash"
+    echo "source ~/.bashrc"
+    echo "export PATH=\$PATH:\$HOME/.drosera/bin"
+    echo "droseraup"
+    exit 1
+fi
 
 # Install Foundry
 echo "🔄 Menginstall Foundry..."
@@ -80,6 +104,8 @@ foundryup
 echo "🔄 Menginstall Bun..."
 curl -fsSL https://bun.sh/install | bash
 source ~/.bashrc
+export PATH=$PATH:$HOME/.bun/bin
+echo 'export PATH=$PATH:$HOME/.bun/bin' >> ~/.bashrc
 
 # Create trap directory
 echo "🔄 Membuat directory trap..."
@@ -95,14 +121,26 @@ forge init -t drosera-network/trap-foundry-template
 
 # Install bun dependencies & build
 echo "🔄 Menginstall dependencies dan build trap..."
-bun install
+$HOME/.bun/bin/bun install
 forge build
+
+# Verify drosera is available
+echo "🔄 Verifikasi Drosera CLI..."
+DROSERA_COMMAND=""
+if command -v drosera &> /dev/null; then
+    DROSERA_COMMAND="drosera"
+elif [ -f "$HOME/.drosera/bin/drosera" ]; then
+    DROSERA_COMMAND="$HOME/.drosera/bin/drosera"
+else
+    echo "❌ Drosera command tidak ditemukan. Coba install ulang."
+    exit 1
+fi
 
 # Deploy Trap dengan interaksi manual
 echo "🔄 Melakukan deploy Trap..."
 echo "⚠️ PENTING: Ketika diminta, ketik 'ofc' dan tekan Enter"
-echo "💡 Menjalankan: DROSERA_PRIVATE_KEY=$PRIVATE_KEY drosera apply"
-DROSERA_PRIVATE_KEY=$PRIVATE_KEY drosera apply
+echo "💡 Menjalankan: DROSERA_PRIVATE_KEY=$PRIVATE_KEY $DROSERA_COMMAND apply"
+DROSERA_PRIVATE_KEY=$PRIVATE_KEY $DROSERA_COMMAND apply
 
 echo -e "\n\n⚠️ PENTING: Setelah trap berhasil di-deploy, jangan lupa untuk melakukan Bloom Boost!"
 echo "🔗 Kunjungi https://app.drosera.io/ dan deposit beberapa Holesky ETH pada trap Anda"
@@ -111,7 +149,7 @@ read -p "" continue_after_bloom
 
 # Run dryrun untuk fetch blocks
 echo "🔄 Menjalankan dryrun untuk fetch blocks..."
-drosera dryrun
+$DROSERA_COMMAND dryrun
 
 # Konfigurasi whitelist untuk operator
 echo "🔄 Mengkonfigurasi whitelist operator..."
@@ -120,7 +158,7 @@ echo "✅ Whitelist operator ditambahkan ke drosera.toml"
 
 # Apply konfigurasi whitelist
 echo "🔄 Menerapkan konfigurasi whitelist..."
-DROSERA_PRIVATE_KEY=$PRIVATE_KEY drosera apply
+DROSERA_PRIVATE_KEY=$PRIVATE_KEY $DROSERA_COMMAND apply
 
 # Kembali ke home directory
 cd ~
