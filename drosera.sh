@@ -162,7 +162,7 @@ read -p "" verify_bloom_boost
 
 # Konfigurasi whitelist untuk operator
 echo -e "\n\n🔄 Langkah 3: Mengkonfigurasi whitelist operator..."
-echo -e "\n\n# Whitelist configuration\nprivate_trap = true\nwhitelist = [\"$PUBLIC_ADDRESS\"]" >> drosera.toml
+echo -e "\n\nprivate_trap = true\nwhitelist = [\"$PUBLIC_ADDRESS\"]" >> drosera.toml
 echo "✅ Whitelist operator ditambahkan ke drosera.toml"
 
 # Apply konfigurasi whitelist
