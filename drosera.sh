@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # File untuk menyimpan data user
-USER_DATA_FILE="/tmp/drosera_user_data"
-INSTALL_STAGE_FILE="/tmp/drosera_install_stage"
+USER_DATA_FILE="$HOME/.drosera_user_data"
+INSTALL_STAGE_FILE="$HOME/.drosera_install_stage"
 
 # Fungsi untuk menampilkan logo & informasi awal
 print_welcome_message() {
